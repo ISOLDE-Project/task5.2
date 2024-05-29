@@ -1,3 +1,6 @@
 [submodule "toolchain/onnx-mlir"]
 	path = toolchain/onnx-mlir
 	url = https://github.com/ISOLDE-Project/onnx-mlir.git
+[submodule "toolchain/riscv-llvm"]
+	path = toolchain/riscv-llvm
+	url = https://github.com/ISOLDE-Project/riscv-llvm.git

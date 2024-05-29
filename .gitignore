@@ -195,3 +195,4 @@ compile_commands.json
 *.ll
 
 *2023-*/
+llvm-project/
