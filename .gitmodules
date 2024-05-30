@@ -4,3 +4,6 @@
 [submodule "toolchain/riscv-llvm"]
 	path = toolchain/riscv-llvm
 	url = https://github.com/ISOLDE-Project/riscv-llvm.git
+[submodule "toolchain/protobuf"]
+	path = toolchain/protobuf
+	url = https://github.com/protocolbuffers/protobuf.git

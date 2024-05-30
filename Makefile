@@ -1,7 +1,8 @@
 ROOT_DIR := $(shell git rev-parse --show-toplevel)
 
-num_cores := $(shell nproc)
-num_cores_half := $(shell echo "$$(($(num_cores) / 2))")
+num_cores         := $(shell nproc)
+num_cores_half    := $(shell echo "$$(($(num_cores) / 2))")
+num_cores_quarter := $(shell echo "$$(($(num_cores) / 4))")
 
 INSTALL_PREFIX          ?= install
 INSTALL_DIR             ?= ${ROOT_DIR}/${INSTALL_PREFIX}
@@ -36,7 +37,7 @@ toolchain-llvm-main: Makefile
 	-DLLVM_TARGETS_TO_BUILD="host;RISCV" \
 	../llvm
 	cd $(ROOT_DIR)/toolchain/riscv-llvm && \
-	$(CMAKE) --build build --target install -j$(num_cores_half)
+	$(CMAKE) --build build --target install -j$(num_cores_quarter)
 
 
 toolchain-cmake: toolchain/cmake-url 
