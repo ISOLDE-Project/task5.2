@@ -196,3 +196,5 @@ compile_commands.json
 
 *2023-*/
 llvm-project/
+install/
+*.tar.gz
