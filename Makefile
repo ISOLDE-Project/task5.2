@@ -21,6 +21,12 @@ CMAKE ?=  $(CMAKE_INSTALL_DIR)/bin/cmake
 #all: toolchain-llvm-main
 .PHONY: toolchain-llvm-main
 
+toolchain-cmake: toolchain/cmake-url 
+	wget  `cat $(CURDIR)/$<` -O toolchain/cmake-linux-x86_64.tar.gz  
+	mkdir -p $(CMAKE_INSTALL_DIR)
+	cd toolchain && \
+	tar -xzvf cmake-linux-x86_64.tar.gz  --strip-components=1 -C  $(CMAKE_INSTALL_DIR)
+
 toolchain-llvm-main: Makefile
 	mkdir -p $(LLVM_INSTALL_DIR)
 	cd $(ROOT_DIR)/toolchain/riscv-llvm && rm -rf build && mkdir -p build && cd build && \
@@ -39,9 +45,17 @@ toolchain-llvm-main: Makefile
 	cd $(ROOT_DIR)/toolchain/riscv-llvm && \
 	$(CMAKE) --build build --target install -j$(num_cores_quarter)
 
-
-toolchain-cmake: toolchain/cmake-url 
-	wget  `cat $(CURDIR)/$<` -O toolchain/cmake-linux-x86_64.tar.gz  
-	mkdir -p $(CMAKE_INSTALL_DIR)
-	cd toolchain && \
-	tar -xzvf cmake-linux-x86_64.tar.gz  --strip-components=1 -C  $(CMAKE_INSTALL_DIR)
+toolchain-protoc: Makefile	
+	git submodule update --init --recursive toolchain/protobuf
+	cd toolchain/protobuf &&  git checkout v4.23.0
+	mkdir -p $(PROTOC_INSTALL_DIR)
+	cd $(ROOT_DIR)/toolchain/protobuf && rm -rf build && mkdir -p build && cd build && \
+	$(CMAKE) \
+    -DCMAKE_INSTALL_PREFIX=$(PROTOC_INSTALL_DIR) \
+	-DCMAKE_CXX_STANDARD=14 \
+	-Dprotobuf_BUILD_TESTS=OFF \
+	..
+	cd toolchain/protobuf && \
+	$(CMAKE) --build build --target install -j$(num_cores_half)
+	@echo "installed protoc: " `$(PROTOC_INSTALL_DIR)/bin/protoc --version`
+	
