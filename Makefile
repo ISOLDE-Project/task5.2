@@ -13,13 +13,33 @@ CMAKE_INSTALL_DIR       ?= ${INSTALL_DIR}/cmake
 MLIR_DIR                ?= ${ROOT_DIR}/toolchain/riscv-llvm/build/lib/cmake/mlir
 PROTOC_DIR              ?= ${PROTOC_INSTALL_DIR}/bin
 
+CC  := clang-10
+CXX := clang++-10
+
 CMAKE ?=  $(CMAKE_INSTALL_DIR)/bin/cmake
 
 
 
 
 #all: toolchain-llvm-main
-.PHONY: toolchain-llvm-main
+
+toolchain-onnx-mlir: Makefile
+	git submodule update --init --recursive toolchain/onnx-mlir
+	cd $(CURDIR)/toolchain/onnx-mlir && git reset --hard && git fetch && git checkout v0.4.2.0 && git submodule update --init --recursive
+	mkdir -p $(ONNX_INSTALL_DIR)
+	export PATH=$(PROTOC_DIR):$(PATH) && \
+	cd $(ROOT_DIR)/toolchain/onnx-mlir && rm -rf build && mkdir -p build && cd build && \
+	$(CMAKE)   \
+	-DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
+	-DONNX_MLIR_BUILD_TESTS=OFF \
+	-DCMAKE_C_COMPILER=$(CC) \
+	-DCMAKE_CXX_COMPILER=$(CXX) \
+	-DCMAKE_INSTALL_PREFIX=$(ONNX_INSTALL_DIR) \
+	-DMLIR_DIR=${MLIR_DIR} \
+	-DCMAKE_BUILD_TYPE="Debug" \
+	..
+	cd $(ROOT_DIR)/toolchain/onnx-mlir && \
+	$(CMAKE) --build build --target install -j$(num_cores_half)
 
 toolchain-cmake: toolchain/cmake-url 
 	wget  `cat $(CURDIR)/$<` -O toolchain/cmake-linux-x86_64.tar.gz  
@@ -46,6 +66,7 @@ toolchain-llvm-main: Makefile
 	$(CMAKE) --build build --target install -j$(num_cores_quarter)
 
 toolchain-protoc: Makefile	
+	rm -fr $(PROTOC_INSTALL_DIR)
 	git submodule update --init --recursive toolchain/protobuf
 	cd toolchain/protobuf &&  git checkout v4.23.0
 	mkdir -p $(PROTOC_INSTALL_DIR)
@@ -54,6 +75,7 @@ toolchain-protoc: Makefile
     -DCMAKE_INSTALL_PREFIX=$(PROTOC_INSTALL_DIR) \
 	-DCMAKE_CXX_STANDARD=14 \
 	-Dprotobuf_BUILD_TESTS=OFF \
+	-DCMAKE_POSITION_INDEPENDENT_CODE=ON \
 	..
 	cd toolchain/protobuf && \
 	$(CMAKE) --build build --target install -j$(num_cores_half)
