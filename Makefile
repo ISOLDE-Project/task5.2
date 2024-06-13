@@ -27,21 +27,7 @@ toolchain-onnx-mlir: Makefile
 	git submodule update --init --recursive toolchain/onnx-mlir
 	cd $(CURDIR)/toolchain/onnx-mlir && git reset --hard && git fetch && git checkout isolde/main && git submodule update --init --recursive
 	mkdir -p $(ONNX_INSTALL_DIR)
-	export PATH=$(PROTOC_DIR):$(PATH) && \
-	cd $(ROOT_DIR)/toolchain/onnx-mlir && rm -rf build && mkdir -p build && cd build && \
-	$(CMAKE)   \
-	-DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
-	-DONNX_MLIR_BUILD_TESTS=OFF \
-	-DONNX_MLIR_ACCELERATORS=OFF \
-	-DONNX_MLIR_ENABLE_STABLEHLO=OFF \
-	-DCMAKE_C_COMPILER=$(CC) \
-	-DCMAKE_CXX_COMPILER=$(CXX) \
-	-DCMAKE_INSTALL_PREFIX=$(ONNX_INSTALL_DIR) \
-	-DMLIR_DIR=${MLIR_DIR} \
-	-DCMAKE_BUILD_TYPE="Debug" \
-	..
-	cd $(ROOT_DIR)/toolchain/onnx-mlir && \
-	$(CMAKE) --build build --target install -j$(num_cores_half)
+	make  -C $(CURDIR)/toolchain/onnx-mlir  ONNX_MLIR_BUILD_TYPE="Debug" ONNX_MLIR_CMAKE_TARGET=install toolchain-onnx-mlir
 
 toolchain-cmake: toolchain/cmake-url 
 	wget  `cat $(CURDIR)/$<` -O toolchain/cmake-linux-x86_64.tar.gz  
