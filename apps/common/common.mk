@@ -1,5 +1,9 @@
 
-ROOT_DIR := $(shell git rev-parse --show-toplevel 2>/dev/null || echo $$MEMPOOL_DIR)
+
+
+ifndef ROOT_DIR
+$(error ROOT_DIR is not defined. Please execute'source eth.sh' from top folder.)
+endif
 INSTALL_PREFIX          ?= install
 LLVM_INSTALL_DIR ?=$(ROOT_DIR)/$(INSTALL_PREFIX)/riscv-llvm
 LLVM_INCLUDE_DIR ?=$(ROOT_DIR)/$(INSTALL_PREFIX)/riscv-llvm
@@ -111,7 +115,13 @@ graph :  $(ONNX_MODEL)
 	$(ONNX_INSTALL_DIR)/bin/onnx-mlir --mtriple=riscv32-unknown-elf --EmitObj -o $@  $<
 	@echo +++ $(ONNX_INSTALL_DIR)/bin/onnx-mlir --mtriple=riscv32-unknown-elf --EmitLLVMIR -o $@  $<
 	$(ONNX_INSTALL_DIR)/bin/onnx-mlir --mtriple=riscv32-unknown-elf --EmitLLVMIR -o $@  $<
-
+	@echo +++ $(ONNX_INSTALL_DIR)/bin/onnx-mlir --mtriple=riscv32-unknown-elf --EmitONNXIR -o $@  $<
+	$(ONNX_INSTALL_DIR)/bin/onnx-mlir --mtriple=riscv32-unknown-elf --EmitONNXIR -o $@  $<
+graph.test :  $(ONNX_MODEL) 	
+	@echo +++ $(ONNX_INSTALL_DIR)/bin/onnx-mlir 
+	$(ONNX_INSTALL_DIR)/bin/onnx-mlir --mtriple=riscv32-unknown-elf --EmitONNXIR -o graph  $<
+	$(ONNX_INSTALL_DIR)/bin/onnx-mlir --mtriple=riscv32-unknown-elf --EmitMLIR   -o graph  $<
+	$(ONNX_INSTALL_DIR)/bin/onnx-mlir --mtriple=riscv32-unknown-elf --EmitLLVM   -o graph  $<
 
 .PHONY: clean
 clean:

@@ -25,13 +25,15 @@ CMAKE ?=  $(CMAKE_INSTALL_DIR)/bin/cmake
 
 toolchain-onnx-mlir: Makefile
 	git submodule update --init --recursive toolchain/onnx-mlir
-	cd $(CURDIR)/toolchain/onnx-mlir && git reset --hard && git fetch && git checkout v0.4.2.0 && git submodule update --init --recursive
+	cd $(CURDIR)/toolchain/onnx-mlir && git reset --hard && git fetch && git checkout isolde/main && git submodule update --init --recursive
 	mkdir -p $(ONNX_INSTALL_DIR)
 	export PATH=$(PROTOC_DIR):$(PATH) && \
 	cd $(ROOT_DIR)/toolchain/onnx-mlir && rm -rf build && mkdir -p build && cd build && \
 	$(CMAKE)   \
 	-DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
 	-DONNX_MLIR_BUILD_TESTS=OFF \
+	-DONNX_MLIR_ACCELERATORS=OFF \
+	-DONNX_MLIR_ENABLE_STABLEHLO=OFF \
 	-DCMAKE_C_COMPILER=$(CC) \
 	-DCMAKE_CXX_COMPILER=$(CXX) \
 	-DCMAKE_INSTALL_PREFIX=$(ONNX_INSTALL_DIR) \
