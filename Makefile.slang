@@ -1,17 +1,19 @@
+prj_path := $(shell git rev-parse --show-toplevel 2>/dev/null || pwd)
 
-prj_path := $(shell git rev-parse --show-toplevel)
-num_cores := $(shell nproc)
-num_cores_half := $(shell echo "$$(($(num_cores) / 2)"))
-VLT_CXX := /usr/bin/clang++
-VLT_CC  := /usr/bin/clang
+num_cores := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu)
+num_cores_half := $(shell n=$$(($(num_cores)/2)); [ $$n -lt 1 ] && n=1; echo $$n)
 
+VLT_CXX ?= clang++
+VLT_CC  ?= clang
 
-INSTALL_PREFIX            ?= install
-TOOLS_DIR                 ?= $(prj_path)/tools
-INSTALL_DIR               ?= $(prj_path)/${INSTALL_PREFIX}
-SLANG_INSTALL_DIR         ?= ${INSTALL_DIR}/slang
-SLANG_VERSION             ?= release/11.0
-BENDER_INSTALL_DIR        ?= ${INSTALL_DIR}/bender
+INSTALL_PREFIX             ?= eda
+TOOLS_DIR                  ?= $(prj_path)/tools
+INSTALL_DIR                ?= $(prj_path)/$(INSTALL_PREFIX)
+SLANG_INSTALL_DIR          ?= ${INSTALL_DIR}/slang
+SLANG_VERSION              ?= release/11.0
+BENDER_INSTALL_DIR         ?= ${INSTALL_DIR}/bender
+SLANG_NETLIST_INSTALL_DIR  ?= $(INSTALL_DIR)/slang-netlist
+SLANG_NETLIST_VERSION      ?= v0.11.0
 
 
 
@@ -41,6 +43,27 @@ ${SLANG_INSTALL_DIR}/bin/slang: ${TOOLS_DIR} ${INSTALL_DIR}
 	cd "$(TOOLS_DIR)/slang" && cmake --install build
 
 
+.PHONY: slang-netlist
+slang-netlist: $(TOOLS_DIR) $(INSTALL_DIR) $(SLANG_NETLIST_INSTALL_DIR)/bin/slang-netlist
+
+$(SLANG_NETLIST_INSTALL_DIR)/bin/slang-netlist: $(TOOLS_DIR) $(INSTALL_DIR)
+	@if [ ! -d "$(TOOLS_DIR)/slang-netlist/.git" ]; then \
+		rm -rf "$(TOOLS_DIR)/slang-netlist"; \
+		cd "$(TOOLS_DIR)" && git clone https://github.com/jameshanlon/slang-netlist.git; \
+	fi
+	cd "$(TOOLS_DIR)/slang-netlist" && \
+		git fetch --all --tags && \
+		test -z "$$(git status --porcelain)" || { echo "ERROR: local changes"; exit 1; } && \
+		git checkout "$(SLANG_NETLIST_VERSION)" && \
+		git clean -fdx && \
+		cmake -S . -B build \
+			-DCMAKE_BUILD_TYPE=Release \
+			-DCMAKE_INSTALL_PREFIX="$(SLANG_NETLIST_INSTALL_DIR)" \
+			-DENABLE_PY_BINDINGS=ON \
+			-DCMAKE_CXX_COMPILER="$(VLT_CXX)" \
+			-DCMAKE_C_COMPILER="$(VLT_CC)" && \
+		cmake --build build -j$(num_cores_half) && \
+		cmake --install build
 
 
 
