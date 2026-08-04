@@ -198,3 +198,4 @@ compile_commands.json
 llvm-project/
 install/
 *.tar.gz
+tools/
