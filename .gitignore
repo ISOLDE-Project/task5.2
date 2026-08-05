@@ -199,3 +199,5 @@ llvm-project/
 install/
 *.tar.gz
 tools/
+eda/
+eda

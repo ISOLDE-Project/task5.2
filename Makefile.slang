@@ -34,11 +34,10 @@ ${SLANG_INSTALL_DIR}/bin/slang: ${TOOLS_DIR} ${INSTALL_DIR}
 	cd "$(TOOLS_DIR)/slang" && git fetch --all --tags
 	cd "$(TOOLS_DIR)/slang" && test -z "$$(git status --porcelain)" || { echo "ERROR: $(TOOLS_DIR)/slang has local changes"; exit 1; }
 	cd "$(TOOLS_DIR)/slang" && git checkout  "origin/$(SLANG_VERSION)"
+	cd "$(TOOLS_DIR)/slang" && git clean -fdx
 	cd "$(TOOLS_DIR)/slang" && cmake -S . -B build \
 		-DCMAKE_BUILD_TYPE=Release \
-		-DCMAKE_INSTALL_PREFIX="$(SLANG_INSTALL_DIR)" \
-		-DCMAKE_CXX_COMPILER="$(VLT_CXX)" \
-		-DCMAKE_C_COMPILER="$(VLT_CC)"
+		-DCMAKE_INSTALL_PREFIX="$(SLANG_INSTALL_DIR)" 
 	cd "$(TOOLS_DIR)/slang" && cmake --build build -j$(num_cores_half)
 	cd "$(TOOLS_DIR)/slang" && cmake --install build
 
@@ -56,6 +55,7 @@ $(SLANG_NETLIST_INSTALL_DIR)/bin/slang-netlist: $(TOOLS_DIR) $(INSTALL_DIR)
 		test -z "$$(git status --porcelain)" || { echo "ERROR: local changes"; exit 1; } && \
 		git checkout "$(SLANG_NETLIST_VERSION)" && \
 		git clean -fdx && \
+		rm -fr build && \
 		cmake -S . -B build \
 			-DCMAKE_BUILD_TYPE=Release \
 			-DCMAKE_INSTALL_PREFIX="$(SLANG_NETLIST_INSTALL_DIR)" \
