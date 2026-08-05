@@ -3,25 +3,75 @@ prj_path := $(shell git rev-parse --show-toplevel 2>/dev/null || pwd)
 num_cores := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu)
 num_cores_half := $(shell n=$$(($(num_cores)/2)); [ $$n -lt 1 ] && n=1; echo $$n)
 
-VLT_CXX ?= clang++
-VLT_CC  ?= clang
 
 INSTALL_PREFIX             ?= eda
 TOOLS_DIR                  ?= $(prj_path)/tools
 INSTALL_DIR                ?= $(prj_path)/$(INSTALL_PREFIX)
+# slang
 SLANG_INSTALL_DIR          ?= ${INSTALL_DIR}/slang
 SLANG_VERSION              ?= release/11.0
+# bender
 BENDER_INSTALL_DIR         ?= ${INSTALL_DIR}/bender
+# slang-netlist
 SLANG_NETLIST_INSTALL_DIR  ?= $(INSTALL_DIR)/slang-netlist
 SLANG_NETLIST_VERSION      ?= v0.11.0
+# verilator
+VERIL_INSTALL_DIR         ?= ${INSTALL_DIR}/verilator
+VERIL_VERSION             ?= v5.048
+# 
+CMAKE_INSTALL_DIR         := $(prj_path)/install/cmake
+CMAKE                     := $(CMAKE_INSTALL_DIR)/bin/cmake
+# #######################
+VLT_CXX := clang++
+VLT_CC  := clang
+# #######################
 
-
+DISTRO_NAME     := eda-ol-$(shell lsb_release -rs)-$(shell date "+%Y-%m-%d").tar.gz
 
 ${TOOLS_DIR}:
 	mkdir -p $@
 
 ${INSTALL_DIR}:
 	mkdir -p $@
+
+.PHONY: check_python3 verilator bender slang slang-netlist distro
+
+check_python3:
+	@command -v python3 >/dev/null 2>&1 || { \
+		echo "ERROR: python3 >= 3.8 is required, but python3 was not found."; \
+		exit 1; \
+	}
+	@python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3,8) else 1)' || { \
+		echo "ERROR: python3 >= 3.8 is required."; \
+		echo "Found: $$(python3 --version)"; \
+		exit 1; \
+	}
+
+## Install Verilator
+verilator:  check_python3 ${TOOLS_DIR} ${INSTALL_DIR} ${VERIL_INSTALL_DIR}/bin/verilator
+
+${VERIL_INSTALL_DIR}/bin/verilator:
+	rm -fr $(TOOLS_DIR)/verilator
+	cd $(TOOLS_DIR) && git clone https://github.com/verilator/verilator.git
+	# Checkout the right version
+	cd $(TOOLS_DIR)/verilator  && git reset --hard && git fetch && git checkout ${VERIL_VERSION}
+	# Compile verilator
+	cd $(TOOLS_DIR)/verilator  && git clean -xfdf && autoconf && \
+	./configure --prefix=$(VERIL_INSTALL_DIR) CXX=$(VLT_CXX) CC=$(VLT_CC) && make -j$(num_cores_half)  && make install
+	touch ${VERIL_INSTALL_DIR}/bin/verilator
+
+
+## Install Bender
+bender:
+	@echo "Installing Bender..."
+	mkdir -p $(BENDER_INSTALL_DIR)
+	curl --proto '=https' --tlsv1.2 -LsSf \
+		https://github.com/pulp-platform/bender/releases/download/v0.32.1/bender-installer.sh | \
+		CARGO_DIST_FORCE_INSTALL_DIR=$(BENDER_INSTALL_DIR) \
+		INSTALLER_NO_MODIFY_PATH=1 \
+		sh
+	$(BENDER_INSTALL_DIR)/bin/bender --version
+
 
 ## Install slang
 slang: ${TOOLS_DIR} ${INSTALL_DIR} ${SLANG_INSTALL_DIR}/bin/slang
@@ -35,14 +85,17 @@ ${SLANG_INSTALL_DIR}/bin/slang: ${TOOLS_DIR} ${INSTALL_DIR}
 	cd "$(TOOLS_DIR)/slang" && test -z "$$(git status --porcelain)" || { echo "ERROR: $(TOOLS_DIR)/slang has local changes"; exit 1; }
 	cd "$(TOOLS_DIR)/slang" && git checkout  "origin/$(SLANG_VERSION)"
 	cd "$(TOOLS_DIR)/slang" && git clean -fdx
-	cd "$(TOOLS_DIR)/slang" && cmake -S . -B build \
+	cd "$(TOOLS_DIR)/slang" && $(CMAKE) -S . -B build \
+		-DCMAKE_CXX_COMPILER="$(VLT_CXX)" \
+		-DCMAKE_C_COMPILER="$(VLT_CC)" \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DCMAKE_INSTALL_PREFIX="$(SLANG_INSTALL_DIR)" 
-	cd "$(TOOLS_DIR)/slang" && cmake --build build -j$(num_cores_half)
-	cd "$(TOOLS_DIR)/slang" && cmake --install build
+	cd "$(TOOLS_DIR)/slang" && $(CMAKE) --build build -j$(num_cores_half)
+	cd "$(TOOLS_DIR)/slang" && $(CMAKE) --install build
 
 
-.PHONY: slang-netlist
+
+## Install slang-netlist
 slang-netlist: $(TOOLS_DIR) $(INSTALL_DIR) $(SLANG_NETLIST_INSTALL_DIR)/bin/slang-netlist
 
 $(SLANG_NETLIST_INSTALL_DIR)/bin/slang-netlist: $(TOOLS_DIR) $(INSTALL_DIR)
@@ -56,16 +109,23 @@ $(SLANG_NETLIST_INSTALL_DIR)/bin/slang-netlist: $(TOOLS_DIR) $(INSTALL_DIR)
 		git checkout "$(SLANG_NETLIST_VERSION)" && \
 		git clean -fdx && \
 		rm -fr build && \
-		cmake -S . -B build \
+		$(CMAKE) -S . -B build \
 			-DCMAKE_BUILD_TYPE=Release \
 			-DCMAKE_INSTALL_PREFIX="$(SLANG_NETLIST_INSTALL_DIR)" \
 			-DENABLE_PY_BINDINGS=ON \
 			-DCMAKE_CXX_COMPILER="$(VLT_CXX)" \
 			-DCMAKE_C_COMPILER="$(VLT_CC)" && \
-		cmake --build build -j$(num_cores_half) && \
-		cmake --install build
+		$(CMAKE) --build build -j$(num_cores_half) && \
+		$(CMAKE) --install build
 
-
-
+DISTRO_TOOLS := bender slang verilator 
+DISTRO_DIRS  := $(addsuffix /,$(DISTRO_TOOLS))
+## create distro
+distro:
+	cd ${INSTALL_DIR} && \
+	tar vczf  ${DISTRO_NAME} $(DISTRO_DIRS)  && \
+	mv  ${DISTRO_NAME} ../
+# last line, don't cross it ;)
+include common.mk
 
 

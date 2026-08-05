@@ -2,8 +2,10 @@
 # Copyleft
 
 # Define environment variables
-MINICONDA=~/miniconda3/etc/profile.d/conda.sh
-MINICONDA_ENV=onnx-mlir
+MINICONDA=$HOME/hdd1/miniconda3/etc/profile.d/conda.sh
+MINICONDA_ENV=ibex
+# MINICONDA_ENV=onnx-mlir
+
 # To activate this environment, use
 #
 #     $ conda activate snitch
