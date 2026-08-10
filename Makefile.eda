@@ -26,7 +26,9 @@ VLT_CXX := clang++
 VLT_CC  := clang
 # #######################
 
-DISTRO_NAME     := eda-ol-$(shell lsb_release -rs)-$(shell date "+%Y-%m-%d").tar.gz
+#DISTRO_NAME     := eda-ol-$(shell lsb_release -rs)-$(shell date "+%Y-%m-%d").tar.gz
+DISTRO_ID   := $(shell . /etc/os-release && echo $$ID)
+DISTRO_NAME := eda-$(DISTRO_ID)-$(shell lsb_release -rs)-$(shell date "+%Y-%m-%d").tar.gz
 
 ${TOOLS_DIR}:
 	mkdir -p $@
@@ -34,7 +36,9 @@ ${TOOLS_DIR}:
 ${INSTALL_DIR}:
 	mkdir -p $@
 
-.PHONY: check_python3 verilator bender slang slang-netlist distro
+.PHONY: all deps check_python3 verilator bender slang slang-netlist distro
+
+all:  verilator bender slang 
 
 check_python3:
 	@command -v python3 >/dev/null 2>&1 || { \
@@ -46,6 +50,9 @@ check_python3:
 		echo "Found: $$(python3 --version)"; \
 		exit 1; \
 	}
+deps: 
+	make toolchain-cmake
+	
 
 ## Install Verilator
 verilator:  check_python3 ${TOOLS_DIR} ${INSTALL_DIR} ${VERIL_INSTALL_DIR}/bin/verilator
@@ -74,7 +81,7 @@ bender:
 
 
 ## Install slang
-slang: ${TOOLS_DIR} ${INSTALL_DIR} ${SLANG_INSTALL_DIR}/bin/slang
+slang: deps ${TOOLS_DIR} ${INSTALL_DIR} ${SLANG_INSTALL_DIR}/bin/slang
 
 ${SLANG_INSTALL_DIR}/bin/slang: ${TOOLS_DIR} ${INSTALL_DIR}
 	if [ ! -d "$(TOOLS_DIR)/slang/.git" ]; then \
