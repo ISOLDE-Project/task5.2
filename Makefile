@@ -13,8 +13,8 @@ CMAKE_INSTALL_DIR       ?= ${INSTALL_DIR}/cmake
 MLIR_DIR                ?= ${ROOT_DIR}/toolchain/riscv-llvm/build/lib/cmake/mlir
 PROTOC_DIR              ?= ${PROTOC_INSTALL_DIR}/bin
 
-CC  := clang-10
-CXX := clang++-10
+CC  := clang
+CXX := clang++
 
 CMAKE ?=  $(CMAKE_INSTALL_DIR)/bin/cmake
 
@@ -56,16 +56,24 @@ toolchain-llvm-main: Makefile
 toolchain-protoc: Makefile	
 	rm -fr $(PROTOC_INSTALL_DIR)
 	git submodule update --init --recursive toolchain/protobuf
-	cd toolchain/protobuf &&  git checkout v4.23.0
+	cd toolchain/protobuf &&  git checkout v3.21.12
 	mkdir -p $(PROTOC_INSTALL_DIR)
 	cd $(ROOT_DIR)/toolchain/protobuf && rm -rf build && mkdir -p build && cd build && \
 	$(CMAKE) \
     -DCMAKE_INSTALL_PREFIX=$(PROTOC_INSTALL_DIR) \
-	-DCMAKE_CXX_STANDARD=14 \
+	-DCMAKE_CXX_STANDARD=17 \
+	-DCMAKE_CXX_STANDARD_REQUIRED=ON \
+    -DABSL_PROPAGATE_CXX_STD=ON \
 	-Dprotobuf_BUILD_TESTS=OFF \
 	-DCMAKE_POSITION_INDEPENDENT_CODE=ON \
 	..
 	cd toolchain/protobuf && \
 	$(CMAKE) --build build --target install -j$(num_cores_half)
 	@echo "installed protoc: " `$(PROTOC_INSTALL_DIR)/bin/protoc --version`
+
+
+.PHONY: clean-protoc
+
+clean-protoc:
+	rm -fr toolchain/protobuf
 	
