@@ -1,3 +1,14 @@
+
+CLEAN_TARGETS := $(addprefix clean-,$(CLEAN_TOOLS))
+
+.PHONY: clean $(CLEAN_TARGETS)
+
+clean: $(CLEAN_TARGETS)
+
+$(CLEAN_TARGETS): clean-%:
+	cd $(TOOLS_DIR)/$* && git clean -xfdf
+
+
 help: Makefile
 	@printf "Available targets:\n------------------\n"
 	@for mkfile in $(MAKEFILE_LIST); do \

@@ -133,6 +133,11 @@ distro:
 	tar vczf  ${DISTRO_NAME} $(DISTRO_DIRS)  && \
 	mv  ${DISTRO_NAME} ../
 # last line, don't cross it ;)
+
+
+# must define it befor including common.mk
+CLEAN_TOOLS := verilator slang
+
 include common.mk
 
 

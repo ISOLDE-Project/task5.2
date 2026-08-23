@@ -72,8 +72,16 @@ toolchain-protoc: Makefile
 	@echo "installed protoc: " `$(PROTOC_INSTALL_DIR)/bin/protoc --version`
 
 
-.PHONY: clean-protoc
+.PHONY: clean clean-protoc clean-llvm
 
 clean-protoc:
-	rm -fr toolchain/protobuf
-	
+	cd toolchain/protobuf && \
+	git reset --hard   && \
+	git clean -xfdf   && \
+	git submodule update --init
+
+clean-llvm:
+	rm -fr toolchain/riscv-llvm/build
+
+clean: 	clean-protoc clean-llvm
+
