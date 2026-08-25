@@ -23,9 +23,11 @@ CMAKE ?=  $(CMAKE_INSTALL_DIR)/bin/cmake
 
 #all: toolchain-llvm-main
 
-toolchain-onnx-mlir: Makefile
-	git submodule update --init --recursive toolchain/onnx-mlir
-	cd $(CURDIR)/toolchain/onnx-mlir && git reset --hard && git fetch && git checkout isolde/main && git submodule update --init --recursive
+
+
+toolchain-onnx-mlir: check-conda-ibex
+# 	git submodule update --init --recursive toolchain/onnx-mlir
+# 	cd $(CURDIR)/toolchain/onnx-mlir && git reset --hard && git fetch && git checkout isolde/main && git submodule update --init --recursive
 	mkdir -p $(ONNX_INSTALL_DIR)
 	make  -C $(CURDIR)/toolchain/onnx-mlir  ONNX_MLIR_BUILD_TYPE="Debug" ONNX_MLIR_CMAKE_TARGET=install toolchain-onnx-mlir
 
@@ -41,14 +43,15 @@ toolchain-llvm-main: Makefile
 	$(CMAKE)   \
 	-DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
 	-DCMAKE_INSTALL_PREFIX=$(LLVM_INSTALL_DIR) \
-	-DLLVM_ENABLE_PROJECTS="clang;lld;mlir" \
+	-DLLVM_ENABLE_PROJECTS="mlir" \
 	-DCMAKE_BUILD_TYPE="Debug" \
 	-DLLVM_ENABLE_ASSERTIONS=ON \
 	-DLLVM_ENABLE_RTTI=ON \
 	-DCMAKE_C_COMPILER=$(CC) \
 	-DCMAKE_CXX_COMPILER=$(CXX) \
+	-DCMAKE_CXX_FLAGS="-include cstdint" \
 	-DLLVM_DEFAULT_TARGET_TRIPLE=riscv32-unknown-elf \
-	-DLLVM_TARGETS_TO_BUILD="host;RISCV" \
+	-DLLVM_TARGETS_TO_BUILD="RISCV" \
 	../llvm
 	cd $(ROOT_DIR)/toolchain/riscv-llvm && \
 	$(CMAKE) --build build --target install -j$(num_cores_quarter)
@@ -74,7 +77,7 @@ toolchain-protoc: Makefile
 
 .PHONY: clean clean-protoc clean-llvm
 
-clean-protoc:
+clean-protobuf:
 	cd toolchain/protobuf && \
 	git reset --hard   && \
 	git clean -xfdf   && \

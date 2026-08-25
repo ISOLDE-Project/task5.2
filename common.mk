@@ -7,7 +7,13 @@ clean: $(CLEAN_TARGETS)
 
 $(CLEAN_TARGETS): clean-%:
 	cd $(TOOLS_DIR)/$* && git clean -xfdf
-
+	
+check-conda-ibex:
+	@if [ "$$CONDA_DEFAULT_ENV" != "ibex" ]; then \
+		echo "Error: Conda environment 'ibex' must be active."; \
+		echo "Run: source ./eth.sh"; \
+		exit 1; \
+	fi
 
 help: Makefile
 	@printf "Available targets:\n------------------\n"
