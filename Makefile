@@ -31,12 +31,14 @@ toolchain-onnx-mlir: check-conda-ibex
 	mkdir -p $(ONNX_INSTALL_DIR)
 	make  -C $(CURDIR)/toolchain/onnx-mlir  ONNX_MLIR_BUILD_TYPE="Debug" ONNX_MLIR_CMAKE_TARGET=install toolchain-onnx-mlir
 
+## install cmake
 toolchain-cmake: toolchain/cmake-url 
 	wget  `cat $(CURDIR)/$<` -O toolchain/cmake-linux-x86_64.tar.gz  
 	mkdir -p $(CMAKE_INSTALL_DIR)
 	cd toolchain && \
 	tar -xzvf cmake-linux-x86_64.tar.gz  --strip-components=1 -C  $(CMAKE_INSTALL_DIR)
-
+	
+## install mlir
 toolchain-llvm-main: Makefile
 	mkdir -p $(LLVM_INSTALL_DIR)
 	cd $(ROOT_DIR)/toolchain/riscv-llvm && rm -rf build && mkdir -p build && cd build && \
@@ -77,14 +79,17 @@ toolchain-protoc: Makefile
 
 .PHONY: clean clean-protoc clean-llvm
 
+## clean up protoc(protocolbuffer compiler) build
 clean-protobuf:
 	cd toolchain/protobuf && \
 	git reset --hard   && \
 	git clean -xfdf   && \
 	git submodule update --init
 
+## clean up riscv-llvm/build
 clean-llvm:
 	rm -fr toolchain/riscv-llvm/build
 
 clean: 	clean-protoc clean-llvm
 
+include common.mk
