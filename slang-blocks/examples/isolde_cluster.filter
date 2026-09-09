@@ -1,0 +1,13 @@
+# An abstract schematic of isolde_cluster: core, accelerator tiles, and the
+# memory/debug fabric between them.
+
+# Noise first.
+drop  net   ^(clk|clk_i|rst_ni?|rst_n)$
+drop  inst  ^i_aida_perfcnt$
+
+# The address shims and the muxes are plumbing: keep the paths, lose the boxes.
+elide type  ^isolde_addr_shim_wrp$
+
+# Five debug-module slave-bus muxes are one idea, not five blocks.
+group inst  ^i_mux_dm_sb_  as "DM slave-bus muxes"
+group inst  ^i_mux_spmld_  as "SPM-loader muxes"

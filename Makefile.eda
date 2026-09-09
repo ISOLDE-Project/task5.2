@@ -15,6 +15,9 @@ BENDER_INSTALL_DIR         ?= ${INSTALL_DIR}/bender
 # slang-netlist
 SLANG_NETLIST_INSTALL_DIR  ?= $(INSTALL_DIR)/slang-netlist
 SLANG_NETLIST_VERSION      ?= v0.11.0
+# slang-blocks (in-tree, built against the slang above)
+SLANG_BLOCKS_INSTALL_DIR   ?= $(INSTALL_DIR)/slang-blocks
+SLANG_BLOCKS_SRC_DIR       := $(prj_path)/slang-blocks
 # verilator
 VERIL_INSTALL_DIR         ?= ${INSTALL_DIR}/verilator
 VERIL_VERSION             ?= v5.048
@@ -36,7 +39,7 @@ ${TOOLS_DIR}:
 ${INSTALL_DIR}:
 	mkdir -p $@
 
-.PHONY: all deps check_python3 verilator bender slang slang-netlist distro
+.PHONY: all deps check_python3 verilator bender slang slang-netlist slang-blocks distro
 
 all:  verilator bender slang 
 
@@ -125,7 +128,27 @@ $(SLANG_NETLIST_INSTALL_DIR)/bin/slang-netlist: $(TOOLS_DIR) $(INSTALL_DIR)
 		$(CMAKE) --build build -j$(num_cores_half) && \
 		$(CMAKE) --install build
 
-DISTRO_TOOLS := bender slang verilator 
+## Install slang-blocks (block-diagram model extractor)
+slang-blocks:  $(SLANG_BLOCKS_INSTALL_DIR)/bin/slang-blocks
+
+$(SLANG_BLOCKS_INSTALL_DIR)/bin/slang-blocks: \
+		$(SLANG_BLOCKS_SRC_DIR)/src/main.cpp \
+		$(SLANG_BLOCKS_SRC_DIR)/CMakeLists.txt
+	cd "$(SLANG_BLOCKS_SRC_DIR)" && $(CMAKE) -S . -B build \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_CXX_COMPILER="$(VLT_CXX)" \
+		-DCMAKE_C_COMPILER="$(VLT_CC)" \
+		-DCMAKE_PREFIX_PATH="$(SLANG_INSTALL_DIR)" \
+		-DCMAKE_INSTALL_PREFIX="$(SLANG_BLOCKS_INSTALL_DIR)"
+	cd "$(SLANG_BLOCKS_SRC_DIR)" && $(CMAKE) --build build -j$(num_cores_half)
+	cd "$(SLANG_BLOCKS_SRC_DIR)" && $(CMAKE) --install build
+	@echo "installed: " `$(SLANG_BLOCKS_INSTALL_DIR)/bin/slang-blocks --version`
+
+## Remove the slang-blocks build tree
+clean-slang-blocks:
+	rm -rf "$(SLANG_BLOCKS_SRC_DIR)/build"
+
+DISTRO_TOOLS := bender slang slang-blocks verilator 
 DISTRO_DIRS  := $(addsuffix /,$(DISTRO_TOOLS))
 ## create distro
 distro:

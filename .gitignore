@@ -201,3 +201,6 @@ install/
 tools/
 eda/
 eda
+
+# slang-blocks out-of-tree build
+slang-blocks/build/
