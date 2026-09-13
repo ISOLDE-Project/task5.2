@@ -204,3 +204,6 @@ eda
 
 # slang-blocks out-of-tree build
 slang-blocks/build/
+*.patch
+*ubyte
+*ubyte.gz
